@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hydralite ERP – Salary & Challan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0f1623;--surface:#1a2235;--card:#212d42;--border:#2e3f5c;
+  --accent:#2196f3;--accent2:#00bcd4;--pink:#e91e8c;--green:#4caf50;
+  --red:#f44336;--yellow:#ffc107;--text:#e8eaf6;--muted:#8896ab;
+  --teal:#009688;--orange:#ff9800;
+  --radius:10px;--font:'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+
+/* ── TOP NAV ── */
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;padding:0}
+.nav-logo{padding:12px 20px;font-weight:700;font-size:16px;color:var(--accent2);
+  white-space:nowrap;border-right:1px solid var(--border)}
+.nav-logo span{color:var(--pink)}
+.nav-tabs{display:flex;flex:1;overflow-x:auto}
+.nav-tab{padding:14px 20px;cursor:pointer;font-size:13px;color:var(--muted);
+  border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent2);background:rgba(0,188,212,.07)}
+
+/* ── PAGE ── */
+.page{display:none;padding:20px;max-width:1300px;margin:0 auto}
+.page.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px}
+.card-title i{font-size:18px}
+
+/* ── DASHBOARD STATS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px;text-align:center}
+.stat-num{font-size:26px;font-weight:700;margin-bottom:4px}
+.stat-lbl{font-size:12px;color:var(--muted)}
+.c-blue{color:var(--accent2)} .c-pink{color:var(--pink)} .c-green{color:var(--green)} .c-yellow{color:var(--yellow)}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:12px;color:var(--muted);font-weight:500}
+.form-group input,.form-group select,.form-group textarea{
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);padding:9px 12px;font-size:13px;outline:none;transition:border .2s;
+  font-family:var(--font)}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent2)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group input[type=number]{-moz-appearance:textfield}
+select option{background:var(--card)}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;
+  font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all .2s}
+.btn-primary{background:var(--accent2);color:#000}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-pink{background:var(--pink);color:#fff}
+.btn-pink:hover{filter:brightness(1.1)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{filter:brightness(1.1)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-orange:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-red{background:var(--red);color:#fff}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+
+/* ── SALARY TABLE ── */
+.sal-settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.sal-setting{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.sal-setting label{font-size:11px;color:var(--muted)}
+.sal-setting input{background:transparent;border:none;color:var(--accent2);
+  font-size:18px;font-weight:700;outline:none;width:100%;font-family:var(--font)}
+
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--surface);color:var(--muted);padding:10px 12px;text-align:center;
+  font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+  border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.03)}
+.td-name{text-align:left}
+td input{background:var(--surface);border:1px solid transparent;border-radius:4px;
+  color:var(--text);padding:4px 8px;font-size:13px;outline:none;width:100%;text-align:center;
+  font-family:var(--font)}
+td input:focus{border-color:var(--accent2)}
+td input.name-inp{text-align:left}
+.formula-cell{color:var(--accent2);font-weight:600}
+.subtotal-row td{background:rgba(255,152,0,.12);color:var(--orange);font-weight:700;font-size:13px}
+.chai-row td{background:rgba(255,193,7,.1);color:var(--yellow);font-weight:600}
+.grand-row td{background:rgba(233,30,140,.15);color:var(--pink);font-weight:700;font-size:15px}
+
+/* ── CHALLAN ── */
+.challan-preview{background:#fff;color:#111;padding:28px;border-radius:8px;
+  font-family:'Times New Roman',serif;font-size:13px;max-width:820px;margin:0 auto}
+.ch-logo-row{display:flex;justify-content:space-between;align-items:flex-start;
+  padding-bottom:12px;border-bottom:3px solid #003366;margin-bottom:14px}
+.ch-logo{font-size:26px;font-weight:900;color:#003366;letter-spacing:-1px}
+.ch-logo span{color:#00aacc}
+.ch-ids{font-size:11px;color:#333;text-align:right;line-height:1.8}
+.ch-company{text-align:center;font-size:20px;font-weight:900;color:#003366;
+  letter-spacing:1px;margin-bottom:4px;border-top:1px solid #ccc;padding-top:10px}
+.ch-addr{text-align:center;font-size:11px;color:#555;margin-bottom:14px}
+.ch-section{margin-bottom:14px}
+.ch-section-title{font-weight:700;font-size:13px;color:#003366;margin-bottom:8px;
+  display:flex;align-items:center;gap:6px}
+.ch-table{width:100%;border-collapse:collapse;font-size:12px}
+.ch-table th{background:#003366;color:#fff;padding:7px 10px;text-align:left;font-size:12px}
+.ch-table td{padding:6px 10px;border:1px solid #ccc;vertical-align:top}
+.ch-table th.center,.ch-table td.center{text-align:center}
+.ch-table tbody tr:nth-child(even){background:#f5f8ff}
+.ch-info-table{width:100%;border-collapse:collapse}
+.ch-info-table td{padding:6px 10px;border:1px solid #ccc;font-size:12px}
+.ch-info-table td:first-child{font-weight:700;background:#eef3ff;width:160px}
+.ch-footer{display:flex;justify-content:space-between;margin-top:20px;font-size:11px;color:#666}
+.ch-stamp{text-align:right;font-style:italic}
+
+/* ── HISTORY ── */
+.history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.hist-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:14px;cursor:pointer;transition:border .2s}
+.hist-card:hover{border-color:var(--accent2)}
+.hist-card-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.hist-card-sub{font-size:12px;color:var(--muted);margin-bottom:10px}
+.hist-card-footer{display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600}
+.badge-salary{background:rgba(0,188,212,.15);color:var(--accent2)}
+.badge-challan{background:rgba(233,30,140,.15);color:var(--pink)}
+
+/* ── MISC ── */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:gap}
+.page-title{font-size:20px;font-weight:700;color:var(--text)}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;
+  padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;
+  opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.add-row-btn{background:none;border:1px dashed var(--border);color:var(--muted);
+  width:100%;padding:8px;cursor:pointer;font-size:12px;border-radius:4px;
+  transition:all .2s;margin-top:8px}
+.add-row-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr 1fr}
+  .nav-logo{display:none}
+  .page{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="nav-logo">💧 Hydra<span>lite</span> ERP</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('dashboard')">🏠 Dashboard</div>
+    <div class="nav-tab" onclick="showPage('salary')">💰 Salary Sheet</div>
+    <div class="nav-tab" onclick="showPage('challan')">📦 Job Work Challan</div>
+    <div class="nav-tab" onclick="showPage('history')">📋 History</div>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: DASHBOARD
+═══════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div style="margin-bottom:20px">
+    <div class="page-title">📊 Dashboard</div>
+    <div class="page-sub">Hydralite Nature Power Pvt Ltd — ERP Overview</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num c-blue" id="d-sal-count">0</div><div class="stat-lbl">Salary Sheets</div></div>
+    <div class="stat"><div class="stat-num c-pink" id="d-chal-count">0</div><div class="stat-lbl">Challans Created</div></div>
+    <div class="stat"><div class="stat-num c-green" id="d-emp-count">0</div><div class="stat-lbl">Total Employees Paid</div></div>
+    <div class="stat"><div class="stat-num c-yellow" id="d-total-paid">₹0</div><div class="stat-lbl">Total Salary Paid</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚡ Quick Actions</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="showPage('salary')">➕ New Salary Sheet</button>
+      <button class="btn btn-pink" onclick="showPage('challan')">📦 New Challan</button>
+      <button class="btn btn-ghost" onclick="showPage('history')">📋 View History</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📅 Recent Activity</div>
+    <div id="recent-activity" class="empty">No records yet. Create your first salary sheet or challan.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: SALARY SHEET
+═══════════════════════════════════════════ -->
+<div class="page" id="page-salary">
+  <div class="section-header">
+    <div>
+      <div class="page-title">💰 Salary Sheet</div>
+      <div class="page-sub">Enter employee details — amounts calculate automatically</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="downloadSalaryExcel()">⬇️ Download Excel</button>
+      <button class="btn btn-pink" onclick="saveSalaryRecord()">💾 Save Record</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-title">⚙️ Sheet Settings</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Pay Period</label>
+        <input type="text" id="sal-period" value="16th Oct – 31st Oct 2026" placeholder="e.g. 1st Oct – 15th Oct 2026">
+      </div>
+      <div class="form-group">
+        <label>Day Rate (₹)</label>
+        <input type="number" id="sal-day-rate" value="350" oninput="recalcAll()">
+      </div>
+      <div class="form-group">
+        <label>Night Rate (₹)</label>
+        <input type="number" id="sal-night-rate" value="500" oninput="recalcAll()">
+      </div>
+      <div class="form-group">
+        <label>Chai Rate (₹)</label>
+        <input type="number" id="sal-chai-rate" value="280" oninput="recalcAll()">
+      </div>
+      <div class="form-group">
+        <label>Chai Days</label>
+        <input type="number" id="sal-chai-days" value="8" oninput="recalcAll()">
+      </div>
+      <div class="form-group">
+        <label>Previous Balance (₹)</label>
+        <input type="number" id="sal-prev-bal" value="0" oninput="recalcAll()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card" style="padding:0">
+    <div class="tbl-wrap">
+      <table id="sal-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th style="min-width:150px;text-align:left">Employee Name</th>
+            <th>Days</th>
+            <th>Day Rate</th>
+            <th>Day Amt</th>
+            <th>Nights</th>
+            <th>Night Rate</th>
+            <th>Night Amt</th>
+            <th>Total Salary</th>
+            <th style="width:40px"></th>
+          </tr>
+        </thead>
+        <tbody id="sal-body"></tbody>
+        <tfoot id="sal-foot"></tfoot>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addSalRow()">➕ Add Employee Row</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: CHALLAN
+═══════════════════════════════════════════ -->
+<div class="page" id="page-challan">
+  <div class="section-header">
+    <div>
+      <div class="page-title">📦 Job Work Challan</div>
+      <div class="page-sub">Fill details and download — Hydralite format</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="downloadChallan()">⬇️ Download Excel</button>
+      <button class="btn btn-pink" onclick="saveChallanRecord()">💾 Save Record</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <!-- LEFT: Form -->
+    <div>
+      <div class="card">
+        <div class="card-title">📋 Challan Details</div>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr">
+          <div class="form-group">
+            <label>Challan No.</label>
+            <input type="text" id="ch-num" value="HLNP/029">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="ch-date">
+          </div>
+          <div class="form-group">
+            <label>Principal GSTIN</label>
+            <input type="text" id="ch-gstin" value="NON">
+          </div>
+          <div class="form-group">
+            <label>Vehicle No.</label>
+            <input type="text" id="ch-vehicle" value="Porter">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Job Worker Name</label>
+            <input type="text" id="ch-worker" value="Thakur Electronics">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Address</label>
+            <textarea id="ch-addr">Sager classic industrial state, Satiwali Vasai East</textarea>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>E-Way Bill No.</label>
+            <input type="text" id="ch-eway" placeholder="Optional">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📦 Goods Details</div>
+        <div class="tbl-wrap">
+          <table id="ch-table">
+            <thead>
+              <tr>
+                <th>Sr.</th>
+                <th style="text-align:left;min-width:160px">Description of Goods</th>
+                <th>HSN Code</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Rate</th>
+                <th>Value</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ch-body"></tbody>
+          </table>
+        </div>
+        <button class="add-row-btn" onclick="addChRow()">➕ Add Item Row</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Live Preview -->
+    <div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:var(--surface);padding:10px 16px;font-size:12px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">
+          👁️ LIVE PREVIEW
+        </div>
+        <div style="padding:12px;background:#f0f0f0;max-height:600px;overflow-y:auto">
+          <div class="challan-preview" id="challan-preview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: HISTORY
+═══════════════════════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="section-header">
+    <div>
+      <div class="page-title">📋 Saved Records</div>
+      <div class="page-sub">All salary sheets and challans</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="clearHistory()">🗑️ Clear All</button>
+  </div>
+  <div class="history-grid" id="history-grid">
+    <div class="empty" style="grid-column:1/-1">No saved records yet.</div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────
+let salRows = [];
+let chRows  = [];
+let records = JSON.parse(localStorage.getItem('erp_records') || '[]');
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if(t.textContent.toLowerCase().includes(id.slice(0,4))) t.classList.add('active');
+  });
+  if(id === 'dashboard') updateDashboard();
+  if(id === 'history')   renderHistory();
+  if(id === 'challan')   updateChallanPreview();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg, color='#4caf50') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── SALARY TABLE ──────────────────────────────────────────────────
+function addSalRow(name='', days=0, nights=0) {
+  const id = Date.now() + Math.random();
+  salRows.push({ id, name, days, nights });
+  renderSalTable();
+}
+
+function removeSalRow(id) {
+  salRows = salRows.filter(r => r.id !== id);
+  renderSalTable();
+}
+
+function renderSalTable() {
+  const dr = +document.getElementById('sal-day-rate').value   || 350;
+  const nr = +document.getElementById('sal-night-rate').value || 500;
+  const tbody = document.getElementById('sal-body');
+  tbody.innerHTML = '';
+  let i = 1;
+  salRows.forEach(row => {
+    const da = row.name ? (row.days * dr)   : '';
+    const na = row.name ? (row.nights * nr) : '';
+    const tt = row.name ? (da + na)         : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.name ? i++ : ''}</td>
+      <td><input class="name-inp" value="${row.name}" placeholder="Employee name"
+          oninput="updateSalRow('${row.id}','name',this.value)"></td>
+      <td><input type="number" min="0" step="0.5" value="${row.days}"
+          oninput="updateSalRow('${row.id}','days',this.value)"></td>
+      <td style="color:var(--muted)">₹${dr}</td>
+      <td class="formula-cell">${row.name ? '₹'+fmt(da) : ''}</td>
+      <td><input type="number" min="0" value="${row.nights}"
+          oninput="updateSalRow('${row.id}','nights',this.value)"></td>
+      <td style="color:var(--muted)">₹${nr}</td>
+      <td class="formula-cell">${row.name ? '₹'+fmt(na) : ''}</td>
+      <td class="formula-cell" style="color:var(--pink)">${row.name ? '₹'+fmt(tt) : ''}</td>
+      <td><button class="btn btn-red btn-sm" onclick="removeSalRow('${row.id}')">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  renderSalFoot();
+}
+
+function updateSalRow(id, field, val) {
+  const r = salRows.find(x => x.id == id);
+  if(!r) return;
+  r[field] = field === 'name' ? val : (parseFloat(val) || 0);
+  renderSalTable();
+}
+
+function recalcAll() { renderSalTable(); }
+
+function renderSalFoot() {
+  const dr  = +document.getElementById('sal-day-rate').value   || 350;
+  const nr  = +document.getElementById('sal-night-rate').value || 500;
+  const cr  = +document.getElementById('sal-chai-rate').value  || 280;
+  const cd  = +document.getElementById('sal-chai-days').value  || 8;
+  const pb  = +document.getElementById('sal-prev-bal').value   || 0;
+  const active = salRows.filter(r => r.name.trim());
+  const dayAmt   = active.reduce((s,r) => s + r.days*dr, 0);
+  const nightAmt = active.reduce((s,r) => s + r.nights*nr, 0);
+  const subtotal = dayAmt + nightAmt;
+  const chai     = cr * cd;
+  const grand    = subtotal + chai + pb;
+
+  const tfoot = document.getElementById('sal-foot');
+  tfoot.innerHTML = `
+    <tr class="subtotal-row">
+      <td colspan="4" style="text-align:right;font-weight:700">SUBTOTAL (${active.length} Employees)</td>
+      <td>₹${fmt(dayAmt)}</td><td></td><td></td>
+      <td>₹${fmt(nightAmt)}</td>
+      <td>₹${fmt(subtotal)}</td><td></td>
+    </tr>
+    ${pb > 0 ? `<tr class="chai-row">
+      <td colspan="8" style="text-align:right">Previous Balance</td>
+      <td>₹${fmt(pb)}</td><td></td>
+    </tr>` : ''}
+    <tr class="chai-row">
+      <td colspan="8" style="text-align:right">Chai (₹${cr} × ${cd} days)</td>
+      <td>₹${fmt(chai)}</td><td></td>
+    </tr>
+    <tr class="grand-row">
+      <td colspan="8" style="text-align:right;font-size:15px">🏆 GRAND TOTAL</td>
+      <td style="font-size:15px">₹${fmt(grand)}</td><td></td>
+    </tr>`;
+}
+
+function fmt(n) { return Number(n).toLocaleString('en-IN'); }
+
+// ── SALARY EXCEL DOWNLOAD ─────────────────────────────────────────
+async function downloadSalaryExcel() {
+  const period  = document.getElementById('sal-period').value;
+  const dr  = +document.getElementById('sal-day-rate').value;
+  const nr  = +document.getElementById('sal-night-rate').value;
+  const cr  = +document.getElementById('sal-chai-rate').value;
+  const cd  = +document.getElementById('sal-chai-days').value;
+  const pb  = +document.getElementById('sal-prev-bal').value;
+  const active = salRows.filter(r => r.name.trim());
+
+  const wb = XLSX.utils.book_new();
+  const aoa = [];
+
+  // Title
+  aoa.push([`LABOUR PAYMENT SHEET — ${period}`, '', '', '', '', '', '', '', '']);
+  aoa.push(['#','Employee Name','Days Worked','Day Rate (Rs.)','Day Amount (Rs.)','Nights','Night Rate (Rs.)','Night Amount (Rs.)','Total Salary (Rs.)']);
+
+  active.forEach((r, i) => {
+    const da = r.days * dr, na = r.nights * nr;
+    aoa.push([i+1, r.name, r.days, dr, da, r.nights, nr, na, da+na]);
+  });
+
+  const dayAmt   = active.reduce((s,r) => s + r.days*dr, 0);
+  const nightAmt = active.reduce((s,r) => s + r.nights*nr, 0);
+  const subtotal = dayAmt + nightAmt;
+  const chai     = cr * cd;
+  const grand    = subtotal + chai + pb;
+
+  aoa.push(['SUBTOTAL (All Employees)', '', '', '', dayAmt, '', '', nightAmt, subtotal]);
+  if(pb > 0) aoa.push(['Previous Balance', '', '', '', '', '', '', '', pb]);
+  aoa.push([`Chai (Rs.${cr} × ${cd} days)`, '', '', '', '', '', '', '', chai]);
+  aoa.push(['GRAND TOTAL', '', '', '', '', '', '', '', grand]);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:8}}];
+  ws['!cols'] = [5,20,13,14,16,8,16,17,17].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, `Salary ${period.slice(0,10)}`);
+
+  const fn = `Salary_${period.replace(/[^a-z0-9]/gi,'_')}.xlsx`;
+  XLSX.writeFile(wb, fn);
+  toast('✅ Salary Excel downloaded!');
+}
+
+// ── CHALLAN TABLE ─────────────────────────────────────────────────
+function addChRow(desc='', hsn='', qty=1000, unit='Pcs', rate='', value='') {
+  const id = Date.now() + Math.random();
+  chRows.push({ id, desc, hsn, qty, unit, rate, value });
+  renderChTable();
+  updateChallanPreview();
+}
+
+function removeChRow(id) {
+  chRows = chRows.filter(r => r.id != id);
+  renderChTable();
+  updateChallanPreview();
+}
+
+function renderChTable() {
+  const tbody = document.getElementById('ch-body');
+  tbody.innerHTML = '';
+  chRows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><input class="name-inp" value="${row.desc}" placeholder="Description"
+          oninput="updateChRow('${row.id}','desc',this.value)"></td>
+      <td><input value="${row.hsn}" placeholder="HSN"
+          oninput="updateChRow('${row.id}','hsn',this.value)" style="width:70px"></td>
+      <td><input type="number" value="${row.qty}"
+          oninput="updateChRow('${row.id}','qty',this.value)" style="width:70px"></td>
+      <td><input value="${row.unit}" placeholder="Unit"
+          oninput="updateChRow('${row.id}','unit',this.value)" style="width:50px"></td>
+      <td><input value="${row.rate}" placeholder="Rate"
+          oninput="updateChRow('${row.id}','rate',this.value)" style="width:60px"></td>
+      <td><input value="${row.value}" placeholder="Value"
+          oninput="updateChRow('${row.id}','value',this.value)" style="width:70px"></td>
+      <td><button class="btn btn-red btn-sm" onclick="removeChRow('${row.id}')">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateChRow(id, field, val) {
+  const r = chRows.find(x => x.id == id);
+  if(r) r[field] = val;
+  updateChallanPreview();
+}
+
+function g(id) { return document.getElementById(id)?.value || ''; }
+
+function updateChallanPreview() {
+  const num     = g('ch-num');
+  const date    = g('ch-date') || new Date().toLocaleDateString('en-IN');
+  const gstin   = g('ch-gstin');
+  const worker  = g('ch-worker');
+  const addr    = g('ch-addr').replace(/\n/g,'<br>');
+  const vehicle = g('ch-vehicle');
+  const eway    = g('ch-eway');
+
+  const rows = chRows.map((r,i) => `
+    <tr>
+      <td class="center">${i+1}</td>
+      <td><strong>${r.desc}</strong></td>
+      <td class="center">${r.hsn}</td>
+      <td class="center"><strong>${r.qty}</strong></td>
+      <td class="center">${r.unit}</td>
+      <td class="center">${r.rate}</td>
+      <td class="center">${r.value}</td>
+    </tr>`).join('');
+
+  const totalQty = chRows.reduce((s,r) => s + (+r.qty||0), 0);
+
+  document.getElementById('challan-preview').innerHTML = `
+    <div class="ch-logo-row">
+      <div>
+        <div class="ch-logo">hydra<span>lite</span>™</div>
+        <div style="font-size:10px;color:#666;margin-top:4px">NATURE POWER</div>
+      </div>
+      <div class="ch-ids">
+        CIN-U32900MH2024PTC424766<br>
+        PAN NO-AAHCH3392Q*<br>
+        GST NO-27AAHCH3392Q1ZU
+      </div>
+    </div>
+    <div class="ch-company">HYDRALITE NATURE POWER PVT LTD</div>
+    <div class="ch-addr">
+      Gala 25, Vaibhav industrial estate, govandi (E) Near Raheja acropolis society, mumbai-400088<br>
+      Cust Care: prosmartconcepts@gmail.com | online@prosmart.in | Tel: +91-98213 10229
+    </div>
+    <div class="ch-section">
+      <div class="ch-section-title">▶ Job Work Challan</div>
+      <table class="ch-info-table">
+        <tr><td>Challan No.</td><td><strong>${num}</strong></td></tr>
+        <tr><td>Date</td><td>${typeof date==='string'&&date.includes('-') ? new Date(date).toLocaleDateString('en-IN') : date}</td></tr>
+        <tr><td>Principal GSTIN</td><td>${gstin}</td></tr>
+        <tr><td>Job Worker Name</td><td>${worker}</td></tr>
+        <tr><td>Address</td><td>${addr}</td></tr>
+      </table>
+    </div>
+    <div class="ch-section">
+      <div class="ch-section-title">▶ Goods Details</div>
+      <table class="ch-table">
+        <thead>
+          <tr>
+            <th class="center" style="width:40px">Sr. No.</th>
+            <th>Description of Goods</th>
+            <th class="center">HSN Code</th>
+            <th class="center">Quantity</th>
+            <th class="center">Unit</th>
+            <th class="center">Rate</th>
+            <th class="center">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          <tr><td colspan="3" style="text-align:right;font-weight:700">Total</td>
+              <td class="center"><strong>${totalQty}</strong></td>
+              <td colspan="3"></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ch-section">
+      <div class="ch-section-title">▶ Dispatch Details</div>
+      <table class="ch-info-table">
+        <tr><td>Vehicle No.</td><td>${vehicle}</td></tr>
+        <tr><td>E-Way Bill No.</td><td>${eway}</td></tr>
+        <tr><td>Dispatch From</td><td>HYDRALITE NATURE POWER PRIVATE LIMITED</td></tr>
+        <tr><td>Dispatch To</td><td>${worker}</td></tr>
+      </table>
+    </div>
+    <div class="ch-footer">
+      <div>Received in good condition.<br><br>Signature: _______________</div>
+      <div class="ch-stamp">For HYDRALITE NATURE POWER PVT LTD<br><br><br>Authorised Signatory</div>
+    </div>`;
+}
+
+// ── CHALLAN EXCEL DOWNLOAD ────────────────────────────────────────
+function downloadChallan() {
+  const num    = g('ch-num');
+  const date   = g('ch-date') || new Date().toLocaleDateString('en-IN');
+  const gstin  = g('ch-gstin');
+  const worker = g('ch-worker');
+  const addr   = g('ch-addr');
+  const veh    = g('ch-vehicle');
+  const eway   = g('ch-eway');
+
+  const wb = XLSX.utils.book_new();
+  const aoa = [];
+
+  aoa.push(['HYDRALITE NATURE POWER PVT LTD','','','','','','']);
+  aoa.push(['Gala 25, Vaibhav industrial estate, govandi (E) Mumbai-400088','','','','','','']);
+  aoa.push(['CIN: U32900MH2024PTC424766 | PAN: AAHCH3392Q* | GST: 27AAHCH3392Q1ZU','','','','','','']);
+  aoa.push(['']);
+  aoa.push(['JOB WORK CHALLAN','','','','','','']);
+  aoa.push(['Challan No.', num, '', 'Date', date, '', '']);
+  aoa.push(['Principal GSTIN', gstin, '', '', '', '', '']);
+  aoa.push(['Job Worker Name', worker, '', '', '', '', '']);
+  aoa.push(['Address', addr, '', '', '', '', '']);
+  aoa.push(['']);
+  aoa.push(['GOODS DETAILS','','','','','','']);
+  aoa.push(['Sr. No.','Description of Goods','HSN Code','Quantity','Unit','Rate','Value']);
+  chRows.forEach((r, i) => {
+    aoa.push([i+1, r.desc, r.hsn, r.qty, r.unit, r.rate, r.value]);
+  });
+  const totalQty = chRows.reduce((s,r) => s+(+r.qty||0), 0);
+  aoa.push(['','Total', '', totalQty, '', '', '']);
+  aoa.push(['']);
+  aoa.push(['DISPATCH DETAILS','','','','','','']);
+  aoa.push(['Vehicle No.', veh, '', 'E-Way Bill No.', eway, '', '']);
+  aoa.push(['Dispatch From','HYDRALITE NATURE POWER PRIVATE LIMITED','','','','','']);
+  aoa.push(['Dispatch To', worker,'','','','','']);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [16,22,12,12,10,10,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, `Challan ${num}`);
+  XLSX.writeFile(wb, `Challan_${num.replace('/','_')}.xlsx`);
+  toast('✅ Challan downloaded!');
+}
+
+// ── SAVE RECORDS ──────────────────────────────────────────────────
+function saveSalaryRecord() {
+  const dr  = +document.getElementById('sal-day-rate').value;
+  const nr  = +document.getElementById('sal-night-rate').value;
+  const cr  = +document.getElementById('sal-chai-rate').value;
+  const cd  = +document.getElementById('sal-chai-days').value;
+  const pb  = +document.getElementById('sal-prev-bal').value;
+  const active = salRows.filter(r => r.name.trim());
+  const subtotal = active.reduce((s,r) => s + r.days*dr + r.nights*nr, 0);
+  const grand = subtotal + cr*cd + pb;
+  const rec = {
+    id: Date.now(), type:'salary',
+    period: document.getElementById('sal-period').value,
+    date: new Date().toLocaleDateString('en-IN'),
+    empCount: active.length, grandTotal: grand,
+    rows: active, dr, nr, cr, cd, pb
+  };
+  records.unshift(rec);
+  saveRecords();
+  toast('💾 Salary record saved!');
+}
+
+function saveChallanRecord() {
+  const rec = {
+    id: Date.now(), type:'challan',
+    num: g('ch-num'), date: g('ch-date') || new Date().toLocaleDateString('en-IN'),
+    worker: g('ch-worker'), rows: chRows.map(r=>({...r})),
+    savedAt: new Date().toLocaleDateString('en-IN')
+  };
+  records.unshift(rec);
+  saveRecords();
+  toast('💾 Challan record saved!');
+}
+
+function saveRecords() {
+  try { localStorage.setItem('erp_records', JSON.stringify(records)); } catch(e){}
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────
+function renderHistory() {
+  const grid = document.getElementById('history-grid');
+  if(!records.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1">No saved records yet.</div>';
+    return;
+  }
+  grid.innerHTML = records.map(r => {
+    if(r.type === 'salary') return `
+      <div class="hist-card" onclick="loadSalaryRecord(${r.id})">
+        <div class="hist-card-title">💰 ${r.period}</div>
+        <div class="hist-card-sub">Saved: ${r.date} · ${r.empCount} employees</div>
+        <div class="hist-card-footer">
+          <span class="badge badge-salary">Grand Total: ₹${fmt(r.grandTotal)}</span>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRecord(${r.id})">🗑️</button>
+        </div>
+      </div>`;
+    else return `
+      <div class="hist-card" onclick="loadChallanRecord(${r.id})">
+        <div class="hist-card-title">📦 Challan ${r.num}</div>
+        <div class="hist-card-sub">Date: ${r.date} · To: ${r.worker}</div>
+        <div class="hist-card-footer">
+          <span class="badge badge-challan">${r.rows.length} items</span>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteRecord(${r.id})">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function loadSalaryRecord(id) {
+  const r = records.find(x => x.id === id); if(!r) return;
+  document.getElementById('sal-period').value     = r.period;
+  document.getElementById('sal-day-rate').value   = r.dr;
+  document.getElementById('sal-night-rate').value = r.nr;
+  document.getElementById('sal-chai-rate').value  = r.cr;
+  document.getElementById('sal-chai-days').value  = r.cd;
+  document.getElementById('sal-prev-bal').value   = r.pb;
+  salRows = r.rows.map(x => ({...x, id: Date.now()+Math.random()}));
+  renderSalTable();
+  showPage('salary');
+  toast('📂 Salary record loaded!', '#2196f3');
+}
+
+function loadChallanRecord(id) {
+  const r = records.find(x => x.id === id); if(!r) return;
+  document.getElementById('ch-num').value    = r.num;
+  document.getElementById('ch-date').value   = r.date;
+  document.getElementById('ch-worker').value = r.worker;
+  chRows = r.rows.map(x => ({...x, id: Date.now()+Math.random()}));
+  renderChTable();
+  updateChallanPreview();
+  showPage('challan');
+  toast('📂 Challan record loaded!', '#e91e8c');
+}
+
+function deleteRecord(id) {
+  if(!confirm('Delete this record?')) return;
+  records = records.filter(r => r.id !== id);
+  saveRecords();
+  renderHistory();
+  toast('🗑️ Deleted', '#f44336');
+}
+
+function clearHistory() {
+  if(!confirm('Clear ALL records? This cannot be undone.')) return;
+  records = []; saveRecords(); renderHistory();
+  toast('🗑️ History cleared', '#f44336');
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────
+function updateDashboard() {
+  const sal  = records.filter(r => r.type === 'salary');
+  const chal = records.filter(r => r.type === 'challan');
+  const emps = sal.reduce((s,r) => s + r.empCount, 0);
+  const paid = sal.reduce((s,r) => s + r.grandTotal, 0);
+  document.getElementById('d-sal-count').textContent  = sal.length;
+  document.getElementById('d-chal-count').textContent = chal.length;
+  document.getElementById('d-emp-count').textContent  = emps;
+  document.getElementById('d-total-paid').textContent = '₹'+fmt(paid);
+
+  const act = document.getElementById('recent-activity');
+  if(!records.length) { act.innerHTML = '<div class="empty">No records yet.</div>'; return; }
+  act.innerHTML = records.slice(0,5).map(r => r.type==='salary'
+    ? `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        💰 <strong>${r.period}</strong> — ₹${fmt(r.grandTotal)} · ${r.empCount} employees · ${r.date}</div>`
+    : `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+        📦 <strong>Challan ${r.num}</strong> — ${r.worker} · ${r.rows.length} items · ${r.savedAt}</div>`
+  ).join('');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+function init() {
+  // Set today's date in challan
+  document.getElementById('ch-date').value = new Date().toISOString().slice(0,10);
+
+  // Pre-fill sample salary rows
+  const samples = [
+    ['Deepak',9,0],['Sanket',3,0],['Farida',12,5],['Sushila',12.5,5],
+    ['Nisha',15,5],['Ragini',5,2],['Urmila',13,5],['Saily',9,0],
+    ['Akshaye',12,0],['Tabassum',0,3],['Ishrat',9,3],['Suhana',5,1],
+    ['Tarannum',2,4],['Savitri',8,0],['','',''],['','',''],
+  ];
+  samples.forEach(([n,d,ni]) => {
+    salRows.push({id:Date.now()+Math.random(), name:n, days:d||0, nights:ni||0});
+  });
+  renderSalTable();
+
+  // Pre-fill challan rows (matching PDF sample)
+  const items = ['Base Plate','Cracked LED','TP4056 Charging Module','Battery',
+                 'Push Button','LED Holder Male','LED Holder Female','PCB'];
+  items.forEach(desc => addChRow(desc,'',1000,'Pcs','',''));
+
+  updateDashboard();
+}
+
+init();
+</script>
+</body>
+</html>
