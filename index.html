@@ -193,7 +193,7 @@ td input.ni{text-align:left}
       <div class="card">
         <div class="ctitle">📋 Challan Details</div>
         <div class="fg2">
-          <div class="fgi"><label>Challan No.</label><input id="c-num" value="HLNP/001"></div>
+          <div class="fgi"><label>Challan No.</label><input id="c-num" value="HLNP/001" oninput="upPrev()"></div>
           <div class="fgi"><label>Date</label><input type="date" id="c-date"></div>
           <div class="fgi"><label>Principal GSTIN</label><input id="c-gstin" value="NON"></div>
           <div class="fgi">
@@ -544,14 +544,16 @@ function saveSal(){
   save();toast('Salary saved!');
 }
 function saveCh(){
-  var next=nextCh();
-  REC.unshift({id:Date.now(),type:'ch',num:v('c-num'),date:v('c-date'),
+  var num=v('c-num').trim();
+  if(!num||REC.some(function(r){return r.type==='ch'&&r.num.trim().toUpperCase()===num.toUpperCase();}))num=nextCh();
+  el('c-num').value=num;
+  REC.unshift({id:Date.now(),type:'ch',num:num,date:v('c-date'),
     worker:v('c-wk'),gstin:v('c-gstin'),veh:v('c-veh'),eway:v('c-eway'),
     addr:v('c-addr'),trans:getTrans(),savedAt:new Date().toLocaleDateString('en-IN'),
     rows:C.map(function(r){return Object.assign({},r);})});
   save();
-  var ne=nextCh();el('c-num').value=ne;
-  toast('Challan saved! Next: '+ne);
+  upPrev();
+  toast('Challan saved: '+num+' · Next: '+nextCh());
 }
 function nextCh(){
   var cc=REC.filter(function(r){return r.type==='ch';});
@@ -651,7 +653,7 @@ function loadSal(id){
 }
 function loadCh(id){
   var r=REC.find(function(x){return x.id===id;});if(!r)return;
-  el('c-num').value=r.num;el('c-date').value=r.date||'';
+  el('c-num').value=nextCh();el('c-date').value=r.date||'';
   el('c-gstin').value=r.gstin||'NON';el('c-veh').value=r.veh||'NON';
   el('c-wk').value=r.worker;el('c-addr').value=r.addr||'';el('c-eway').value=r.eway||'';
   C=r.rows.map(function(x){return Object.assign({},x,{id:Date.now()+Math.random()});});
