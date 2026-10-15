@@ -132,7 +132,7 @@ td input.ni{text-align:left}
     <div class="ctitle">⚡ Quick Actions</div>
     <div class="brow">
       <button class="btn ba2" onclick="go('sal')">➕ New Salary Sheet</button>
-      <button class="btn bp" onclick="go('ch')">📦 New Challan</button>
+      <button class="btn bp" onclick="newCh()">📦 New Challan</button>
       <button class="btn bgh" onclick="go('hist')">📋 History</button>
     </div>
   </div>
@@ -195,10 +195,11 @@ td input.ni{text-align:left}
         <div class="fg2">
           <div class="fgi"><label>Challan No.</label><input id="c-num" value="HLNP/001" oninput="upPrev()"></div>
           <div class="fgi"><label>Date</label><input type="date" id="c-date"></div>
-          <div class="fgi"><label>Principal GSTIN</label><input id="c-gstin" value="NON"></div>
+          <div class="fgi"><label>Principal GSTIN</label><input id="c-gstin" oninput="upPrev()"></div>
           <div class="fgi">
             <label>Mode of Transport</label>
             <select id="c-trans" onchange="toggleTrans()">
+              <option value="">Select transport</option>
               <option>Porter</option><option>Manual</option>
               <option>Courier</option><option>Other</option>
             </select>
@@ -207,9 +208,9 @@ td input.ni{text-align:left}
             <label>Specify Transport</label>
             <input id="c-trans-txt" placeholder="Enter transport mode" oninput="upPrev()">
           </div>
-          <div class="fgi"><label>Vehicle No.</label><input id="c-veh" value="NON" oninput="upPrev()"></div>
-          <div class="fgi" style="grid-column:1/-1"><label>Job Worker Name</label><input id="c-wk" value="Thakur Electronics" oninput="upPrev()"></div>
-          <div class="fgi" style="grid-column:1/-1"><label>Address</label><textarea id="c-addr" oninput="upPrev()">Sager classic industrial state, Satiwali Vasai East</textarea></div>
+          <div class="fgi"><label>Vehicle No.</label><input id="c-veh" oninput="upPrev()"></div>
+          <div class="fgi" style="grid-column:1/-1"><label>Job Worker Name</label><input id="c-wk" oninput="upPrev()"></div>
+          <div class="fgi" style="grid-column:1/-1"><label>Address</label><textarea id="c-addr" oninput="upPrev()"></textarea></div>
           <div class="fgi" style="grid-column:1/-1"><label>E-Way Bill No.</label><input id="c-eway" placeholder="Optional" oninput="upPrev()"></div>
         </div>
       </div>
@@ -343,8 +344,16 @@ function renderFoot(){
 }
 
 // ── CHALLAN TABLE ─────────────────────────────────────────────────────────────
+function newCh(){
+  ['c-gstin','c-veh','c-wk','c-addr','c-eway','c-trans','c-trans-txt'].forEach(function(id){el(id).value='';});
+  el('c-num').value=nextCh();
+  var today=new Date();
+  el('c-date').value=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  el('c-trans-other').style.display='none';
+  C=[];addCR();go('ch');
+}
 function addCR(desc,hsn,qty,unit,rate,val){
-  desc=desc||'';hsn=hsn||'';qty=qty||1000;unit=unit||'Pcs';rate=rate||'';val=val||'';
+  desc=desc||'';hsn=hsn||'';qty=qty==null?'':qty;unit=unit||'';rate=rate==null?'':rate;val=val==null?'':val;
   C.push({id:Date.now()+Math.random(),desc:desc,hsn:hsn,qty:qty,unit:unit,rate:rate,val:val});
   renderCh();upPrev();
 }
@@ -691,10 +700,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
     S.push({id:Date.now()+Math.random(),name:n,days:days,nights:nights});
   });
   renderSal();
-  ['Base Plate','Cracked LED','TP4056 Charging Module','Battery',
-   'Push Button','LED Holder Male','LED Holder Female','PCB'].forEach(function(d){
-    addCR(d,'',1000,'Pcs','','');
-  });
+  addCR();
   updDash();
 })();
 </script>
