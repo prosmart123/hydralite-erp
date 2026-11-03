@@ -494,6 +494,7 @@ function buildSal(snap){
       '<td style="text-align:center">&#8377;'+nr+'</td>'+
       '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(r.nights*nr)+'</td>'+
       '<td style="text-align:right;padding-right:8px;font-weight:700;color:#003366">&#8377;'+fmt(r.days*dr+r.nights*nr)+'</td>'+
+      '<td style="min-width:100px;height:38px"></td>'+
       '</tr>';
   }).join('');
   return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+
@@ -517,20 +518,21 @@ function buildSal(snap){
   '<div class="pb"><span>&#128197; Pay Period: '+period+'</span><span>Day: &#8377;'+dr+' | Night: &#8377;'+nr+'</span></div>'+
   '<table><thead><tr>'+
   '<th style="width:28px">#</th>'+
-  '<th style="text-align:left;padding-left:8px;min-width:110px">Employee</th>'+
+  '<th style="text-align:left;padding-left:8px;width:140px">Employee</th>'+
   '<th>Days</th><th>Day Rate</th><th>Day Amt</th>'+
   '<th>Nights</th><th>Night Rate</th><th>Night Amt</th><th>Total Salary</th>'+
+  '<th style="width:100px">Employee Signature</th>'+
   '</tr></thead><tbody>'+rows+'</tbody>'+
   '<tfoot>'+
   '<tr class="sr2"><td colspan="4" style="text-align:right">SUBTOTAL ('+act.length+' Employees)</td>'+
   '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(da)+'</td><td></td><td></td>'+
   '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(na)+'</td>'+
-  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(sub)+'</td></tr>'+
-  (pb>0?'<tr class="cr2"><td colspan="8" style="text-align:right">Previous Balance</td><td style="text-align:right;padding-right:8px">&#8377;'+fmt(pb)+'</td></tr>':'')+
+  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(sub)+'</td><td></td></tr>'+
+  (pb>0?'<tr class="cr2"><td colspan="8" style="text-align:right">Previous Balance</td><td style="text-align:right;padding-right:8px">&#8377;'+fmt(pb)+'</td><td></td></tr>':'')+
   '<tr class="cr2"><td colspan="8" style="text-align:right">Chai (&#8377;'+cr+' x '+cd+' days)</td>'+
-  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(chai)+'</td></tr>'+
+  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(chai)+'</td><td></td></tr>'+
   '<tr class="gr2"><td colspan="8" style="text-align:right;padding-right:8px">GRAND TOTAL</td>'+
-  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(grand)+'</td></tr>'+
+  '<td style="text-align:right;padding-right:8px">&#8377;'+fmt(grand)+'</td><td></td></tr>'+
   '</tfoot></table></div></body></html>';
 }
 
